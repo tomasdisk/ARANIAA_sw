@@ -33,8 +33,8 @@
 
 /* Date: 2015-09-23 */
 
-#ifndef _PCA9685DRIVER_H_
-#define _PCA9685DRIVER_H_
+#ifndef _MAIN_H_
+#define _MAIN_H_
 
 /*==================[inclusions]=============================================*/
 
@@ -46,34 +46,13 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
-#define PCA9685_SUBADR1 0x2
-#define PCA9685_SUBADR2 0x3
-#define PCA9685_SUBADR3 0x4
-
-#define PCA9685_MODE1 0x0
-#define PCA9685_PRESCALE 0xFE
-
-#define LED0_ON_L 0x6
-#define LED0_ON_H 0x7
-#define LED0_OFF_L 0x8
-#define LED0_OFF_H 0x9
-
-#define ALLLED_ON_L 0xFA
-#define ALLLED_ON_H 0xFB
-#define ALLLED_OFF_L 0xFC
-#define ALLLED_OFF_H 0xFD
+#define PCA9685_ADDR 0x40
 
 /*==================[typedef]================================================*/
 
 /*==================[external data declaration]==============================*/
 
 /*==================[external functions declaration]=========================*/
-
-void begin(uint8_t addr);
-void reset(void);
-void setPWMFreq(float freq);
-void setPWM(uint8_t num, uint16_t on, uint16_t off);
-void setPin(uint8_t num, uint16_t val, bool_t invert);
 
 /*==================[cplusplus]==============================================*/
 
@@ -82,4 +61,4 @@ void setPin(uint8_t num, uint16_t val, bool_t invert);
 #endif
 
 /*==================[end of file]============================================*/
-#endif /* #ifndef _PCA9685DRIVER_H_ */
+#endif /* #ifndef _MAIN_H_ */

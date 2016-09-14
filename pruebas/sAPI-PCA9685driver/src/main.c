@@ -37,20 +37,25 @@
 
 /*==================[inclusions]=============================================*/
 
-#include "pca9685Driver.h"         /* <= own header */
+#include "main.h"         /* <= own header */
 
 #include "sAPI.h"         /* <= sAPI header */
+
+#include "pca9685Driver.h"         /* <= PCA9685 driver header */
 
 /*==================[macros and definitions]=================================*/
 
 /*==================[internal data declaration]==============================*/
 
-uint8_t _i2caddr;
+uint16_t pos0 = 172; // ancho de pulso en cuentas para pocicion 0°
+uint16_t pos180 = 565; // ancho de pulso en cuentas para la pocicion 180°
 
 /*==================[internal functions declaration]=========================*/
 
-uint8_t read8(uint8_t addr);
-void write8(uint8_t addr, uint8_t d);
+int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
+		int32_t out_max);
+
+void setServo(uint8_t n_servo, int16_t angulo);
 
 /*==================[internal data definition]===============================*/
 
@@ -58,85 +63,80 @@ void write8(uint8_t addr, uint8_t d);
 
 /*==================[internal functions definition]==========================*/
 
+int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
+		int32_t out_max) {
+	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+void setServo(uint8_t n_servo, int16_t angulo) {
+	int16_t duty;
+	duty = (int16_t) map((int32_t) angulo, 0, 180, (int32_t) pos0,
+			(int32_t) pos180);
+	PCA9685_setPWM(n_servo, 0, duty);
+}
+
 /*==================[external functions definition]==========================*/
 
-void begin(uint8_t addr) {
-	i2cConfig(I2C0, 100000);
-	_i2caddr = addr;
-	reset();
-}
+/* FUNCION PRINCIPAL, PUNTO DE ENTRADA AL PROGRAMA LUEGO DE RESET. */
+int main(void) {
 
-void reset(void) {
-	write8(PCA9685_MODE1, 0x0);
-}
+	/* ------------- INICIALIZACIONES ------------- */
 
-void setPWMFreq(float freq) {
-	freq *= 0.9; // Correct for overshoot in the frequency setting (see issue #11).
-	float prescaleval = 25000000;
-	prescaleval /= 4096;
-	prescaleval /= freq;
-	prescaleval -= 1;
+	/* Inicializar la placa */
+	boardConfig();
 
-	uint8_t prescale = floor(prescaleval + 0.5);
+	/* Inicializar el conteo de Ticks con resolución de 1ms, sin tickHook */
+	tickConfig(1, 0);
 
-	uint8_t oldmode = read8(PCA9685_MODE1);
-	uint8_t newmode = (oldmode & 0x7F) | 0x10; // sleep
-	write8(PCA9685_MODE1, newmode); // go to sleep
-	write8(PCA9685_PRESCALE, prescale); // set the prescaler
-	write8(PCA9685_MODE1, oldmode);
-	delay(5);
-	write8(PCA9685_MODE1, oldmode | 0xa1); //  This sets the MODE1 register to turn on auto increment.
-}
+	/* Inicializar DigitalIO */
+	digitalConfig(0, ENABLE_DIGITAL_IO);
 
-/* num tiene que ser entre 0 y 15 */
-void setPWM(uint8_t num, uint16_t on, uint16_t off) {
-	if (num>=0 && num<=15) {
-		uint8_t buf[4];
-		buf[0] = on;
-		buf[1] = on >> 8;
-		buf[2] = off;
-		buf[3] = off >> 8;
-		i2cWrite(I2C0, _i2caddr, LED0_ON_L + 4 * num, buf, 4);
-	}
-}
+	/* Configuración de pines de entrada para Teclas de la CIAA-NXP */
+	digitalConfig(TEC1, INPUT);
+	digitalConfig(TEC2, INPUT);
+	digitalConfig(TEC3, INPUT);
+	digitalConfig(TEC4, INPUT);
 
-// Sets pin without having to deal with on/off tick placement and properly handles
-// a zero value as completely off.  Optional invert parameter supports inverting
-// the pulse for sinking to ground.  Val should be a value from 0 to 4095 inclusive.
-void setPin(uint8_t num, uint16_t val, bool_t invert) {
-	// Clamp value between 0 and 4095 inclusive.
-	val = min(val, 4095);
-	if (invert) {
-		if (val == 0) {
-			// Special value for signal fully on.
-			setPWM(num, 4096, 0);
-		} else if (val == 4095) {
-			// Special value for signal fully off.
-			setPWM(num, 0, 4096);
-		} else {
-			setPWM(num, 0, 4095 - val);
+	/* Configuración de pines de salida para Leds de la CIAA-NXP */
+	digitalConfig(LEDR, OUTPUT);
+	digitalConfig(LEDG, OUTPUT);
+	digitalConfig(LEDB, OUTPUT);
+	digitalConfig(LED1, OUTPUT);
+	digitalConfig(LED2, OUTPUT);
+	digitalConfig(LED3, OUTPUT);
+
+	/* Configurar Servo */
+	PCA9685_begin(PCA9685_ADDR);
+	PCA9685_setPWMFreq(60);
+
+	/* Usar Servo */
+
+	/* Usar Output */
+	digitalWrite(LED3, 1);
+
+	int16_t n = 0;
+	int16_t duty;
+
+	/* ------------- REPETIR POR SIEMPRE ------------- */
+	while (1) {
+		for (duty = pos0; duty < pos180; duty = duty + 10) {
+			//for (n = 0; n < 16; n++) {
+			PCA9685_setPWM(n, 0, duty);
+			//}
 		}
-	} else {
-		if (val == 4095) {
-			// Special value for signal fully on.
-			setPWM(num, 4096, 0);
-		} else if (val == 0) {
-			// Special value for signal fully off.
-			setPWM(num, 0, 4096);
-		} else {
-			setPWM(num, 0, val);
+		delay(1000);
+		for (duty = pos180; duty > pos0; duty = duty - 10) {
+			//for (n = 0; n < 16; n++) {
+			PCA9685_setPWM(n, 0, duty);
+			//}
 		}
+		delay(1000);
+
 	}
-}
 
-uint8_t read8(uint8_t addr) {
-	uint8_t buf;
-	i2cRead(I2C0, _i2caddr, addr, &buf, 1);
-	return buf;
-}
-
-void write8(uint8_t addr, uint8_t d) {
-	i2cWrite(I2C0, _i2caddr, addr, &d, 1);
+	/* NO DEBE LLEGAR NUNCA AQUI, debido a que a este programa no es llamado
+	 por ningun S.O. */
+	return 0;
 }
 
 /*==================[end of file]============================================*/

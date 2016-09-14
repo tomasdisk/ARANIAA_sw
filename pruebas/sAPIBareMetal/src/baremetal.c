@@ -1,7 +1,10 @@
-/* Copyright 2016, Eric Pernia.
+/* Copyright 2014, 2015 Mariano Cerdeiro
+ * Copyright 2014, Pablo Ridolfi
+ * Copyright 2014, Juan Cecconi
+ * Copyright 2014, Gustavo Muro
  * All rights reserved.
  *
- * This file is part sAPI library for microcontrollers.
+ * This file is part of CIAA Firmware.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,15 +34,46 @@
  *
  */
 
+/** \brief Bare Metal example source file
+ **
+ ** This is a mini example of the CIAA Firmware.
+ **
+ **/
+
+/** \addtogroup CIAA_Firmware CIAA Firmware
+ ** @{ */
+/** \addtogroup Examples CIAA Firmware Examples
+ ** @{ */
+/** \addtogroup Baremetal Bare Metal example source file
+ ** @{ */
+
 /*
- * Date: 2016-07-03
+ * Initials     Name
+ * ---------------------------
+ *
+ */
+
+/*
+ * modification history (new versions first)
+ * -----------------------------------------------------------
+ * yyyymmdd v0.0.1 initials initial version
  */
 
 /*==================[inclusions]=============================================*/
+#include "baremetal.h"       /* <= own header */
 
-#include "main.h"         /* <= own header */
+/*
+#ifndef CPU
+#error CPU shall be defined
+#endif
+#if (lpc4337 == CPU)
+#include "chip.h"
+#elif (mk60fx512vlq15 == CPU)
+#else
+#endif
+*/
 
-#include "sAPI.h"         /* <= sAPI header */
+#include "sAPI.h"
 
 /*==================[macros and definitions]=================================*/
 
@@ -54,60 +88,27 @@
 /*==================[internal functions definition]==========================*/
 
 /*==================[external functions definition]==========================*/
+/** \brief Main function
+ *
+ * This is the main entry point of the software.
+ *
+ * \returns 0
+ *
+ * \remarks This function never returns. Return value is only to avoid compiler
+ *          warnings or errors.
+ */
+int main(void)
+{
+   /* perform the needed initialization here */
 
-/* FUNCION PRINCIPAL, PUNTO DE ENTRADA AL PROGRAMA LUEGO DE RESET. */
-int main(void){
-
-   /* ------------- INICIALIZACIONES ------------- */
-
-   /* Inicializar la placa */
-   boardConfig();
-
-   /* Inicializar el conteo de Ticks con resolución de 1ms, sin tickHook */
-   tickConfig( 1, 0 );
-
-   /* Inicializar DigitalIO */
-   digitalConfig( 0, ENABLE_DIGITAL_IO );
-
-   /* Configuración de pines de entrada para Teclas de la CIAA-NXP */
-   digitalConfig( TEC1, INPUT );
-   digitalConfig( TEC2, INPUT );
-   digitalConfig( TEC3, INPUT );
-   digitalConfig( TEC4, INPUT );
-
-   /* Configuración de pines de salida para Leds de la CIAA-NXP */
-   digitalConfig( LEDR, OUTPUT );
-   digitalConfig( LEDG, OUTPUT );
-   digitalConfig( LEDB, OUTPUT );
-   digitalConfig( LED1, OUTPUT );
-   digitalConfig( LED2, OUTPUT );
-   digitalConfig( LED3, OUTPUT );
-
-   bool_t valor = 0;
-
-   uint8_t servoAngle = 0; /* 0 a 180 grados */
-
-   /* Configurar Servo */
-   valor = servoConfig( 0,      ENABLE_SERVO_TIMERS );
-
-   valor = servoConfig( SERVO0, ENABLE_SERVO_OUTPUT );
-
-   /* Usar Servo */
-   valor = servoWrite( SERVO0, servoAngle );
-   servoAngle = servoRead( SERVO0 );
-
-   /* Usar Output */
-   digitalWrite( LED3, 1 );
-
-   /* ------------- REPETIR POR SIEMPRE ------------- */
    while(1) {
-
-
+      /* add your code here */
    }
-
-   /* NO DEBE LLEGAR NUNCA AQUI, debido a que a este programa no es llamado
-      por ningun S.O. */
-   return 0 ;
+   return 0;
 }
 
+/** @} doxygen end group definition */
+/** @} doxygen end group definition */
+/** @} doxygen end group definition */
 /*==================[end of file]============================================*/
+
