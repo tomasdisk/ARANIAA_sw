@@ -41,44 +41,68 @@
 
 #include "sAPI.h"         /* <= sAPI header */
 
-#include "pca9685Driver.h"         /* <= PCA9685 driver header */
+#include "servoController.h"        /* <= servoController header */
 
 /*==================[macros and definitions]=================================*/
 
+#define USED_SERVO 12
+
 /*==================[internal data declaration]==============================*/
 
-uint16_t pos0 = 172; // ancho de pulso en cuentas para pocicion 0°
-uint16_t pos180 = 565; // ancho de pulso en cuentas para la pocicion 180°
+typedef void (*taskPointer_t)(void);
 
 /*==================[internal functions declaration]=========================*/
 
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
-		int32_t out_max);
-
-void setServo(uint8_t n_servo, int16_t angulo);
+void TASK_A(void);
+void TASK_B(void);
 
 /*==================[internal data definition]===============================*/
+
+servo_t servos[USED_SERVO];
+taskPointer_t task_A = TASK_A;
+taskPointer_t task_B = TASK_B;
 
 /*==================[external data definition]===============================*/
 
 /*==================[internal functions definition]==========================*/
 
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
-		int32_t out_max) {
-	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+void TASK_A() {
+	uint8_t i;
+	digitalWrite(LEDR, 0);
+	digitalWrite(LEDB, 0);
+
+	while (digitalRead(TEC1)) {
+		digitalWrite(LEDG, 1);
+		for (i = 0; i < USED_SERVO; i++) {
+			servoController_setServo(i, 180);
+		}
+		servoController_refreshAll();
+		digitalWrite(LEDG, 0);
+		delay(5000);
+	}
+
+	//task_B();
 }
 
-void setServo(uint8_t n_servo, int16_t angulo) {
-	int16_t duty;
-	duty = (int16_t) map((int32_t) angulo, 0, 180, (int32_t) pos0,
-			(int32_t) pos180);
-	PCA9685_setPWM(n_servo, 0, duty);
+void TASK_B() {
+	digitalWrite(LEDG, 0);
+	digitalWrite(LEDR, 0);
+
+	while (digitalRead(TEC1)) {
+		digitalWrite(LEDB, 1);
+		delay(1000);
+		digitalWrite(LEDB, 0);
+		delay(1000);
+	}
+
+	//task_A();
 }
 
 /*==================[external functions definition]==========================*/
 
 /* FUNCION PRINCIPAL, PUNTO DE ENTRADA AL PROGRAMA LUEGO DE RESET. */
 int main(void) {
+	uint8_t i;
 
 	/* ------------- INICIALIZACIONES ------------- */
 
@@ -105,34 +129,55 @@ int main(void) {
 	digitalConfig(LED2, OUTPUT);
 	digitalConfig(LED3, OUTPUT);
 
-	/* Configurar Servo */
-	PCA9685_begin(PCA9685_ADDR);
-	PCA9685_setPWMFreq(60);
+	/* Inicializar UART_USB a 115200 baudios */
+	uartConfig(UART_USB, 115200);
+
+	/* Envía info del programa por la uart */
+	uartWriteString( UART_USB, (uint8_t*)"Bienvenido al servo controller test\r\n" );
+	uartWriteString( UART_USB, (uint8_t*)"El test tiene dos tareas y se cambia de una a otra con TEC1\r\n" );
+	uartWriteString( UART_USB, (uint8_t*)"*Tarea 1 (LED verde) => mover 12 servos de 0 a 180 grados\r\n" );
+	uartWriteString( UART_USB, (uint8_t*)"*Tarea 2 (LED azul) => no hace nada\r\n" );
+	uartWriteString( UART_USB, (uint8_t*)"Las tareas inician una vez iniciado todos los servos y prendido el LED3\r\n" );
+	uartWriteString( UART_USB, (uint8_t*)"Se finaliza el programa con TEC4" );
+	uartWriteString( UART_USB, (uint8_t*)"Una vez apagado el LED3 y prendido el LED rojo el programa espera por un reset\r\n" );
+
+	/* Definir 12 Servos */
+	servos[0].servo = SERV0;
+	servos[0].init_pos = 0;
+	for (i = 1; i < USED_SERVO; i++) {
+		servos[i].servo = i;
+		servos[i].init_pos = 15 * i;
+	}
+
+	/* Attach Servos */
+	servoController_init(servos, USED_SERVO);
+
+	/* Mover Servos a la posicion inicial */
+	servoController_initialPosition();
 
 	/* Usar Servo */
+	servoController_moveServo(SERV0, 180);
 
 	/* Usar Output */
 	digitalWrite(LED3, 1);
 
-	int16_t n = 0;
-	int16_t duty;
+	delay(1000);
 
-	/* ------------- REPETIR POR SIEMPRE ------------- */
-	while (1) {
-		for (duty = pos0; duty < pos180; duty = duty + 10) {
-			//for (n = 0; n < 16; n++) {
-			PCA9685_setPWM(n, 0, duty);
-			//}
-		}
-		delay(1000);
-		for (duty = pos180; duty > pos0; duty = duty - 10) {
-			//for (n = 0; n < 16; n++) {
-			PCA9685_setPWM(n, 0, duty);
-			//}
-		}
-		delay(1000);
+	/* -------------  INICIAR SCHEDULER  ------------- */
 
+	while (digitalRead(TEC4)) {
+		task_A();
+		task_B();
 	}
+
+	/* ------------- FINALIZO  SCHEDULER ------------- */
+
+	digitalWrite(LED3, 0);
+	digitalWrite(LEDG, 0);
+	digitalWrite(LEDB, 0);
+	digitalWrite(LEDR, 1);
+	while (1)
+		;
 
 	/* NO DEBE LLEGAR NUNCA AQUI, debido a que a este programa no es llamado
 	 por ningun S.O. */

@@ -45,8 +45,6 @@
 
 /*==================[macros and definitions]=================================*/
 
-#define SERVO_TOTALNUMBER   25 /* 16 from PCA9685 and 9 from sAPI_Servo */
-
 /* PCA9586 info */
 #define PCA9685_0_ADDR 0x40
 #define PCA9685_0_FREQ 50
@@ -89,7 +87,7 @@ typedef void (*controllerFunctionPointer_t)(uint8_t);
 typedef struct {
 	uint8_t addr; /*Servo local address in the device who control it.*/
 	bool_t attached; /*If it is attached*/
-	uint8_t angle;
+	uint8_t angle; /*Servo angle. From 0º to 180º*/
 	controllerFunctionPointer_t associatedFunction; /*Function who control it*/
 	bool_t refresh;
 	uint8_t init_pos; /*Natural position angle*/
@@ -107,7 +105,7 @@ void controller_sAPI_servo(uint8_t n_servo);
 static uint8_t use_sAPI=0;
 static uint8_t use_PCA9685_0=0;
 
-static attachedServo_t AttachedServoList[SERVO_TOTALNUMBER] = {
+static attachedServo_t AttachedServoList[SERVO_TOTAL_NUMBER] = {
 /*	position	| servo address	| attached	| angle	| associatedFunction |	refresh	| initial position*/
 		/*0*/	{ SERV0_ADDR	, 0 		, 0 	, controller_PCA9685_0	, 0 	, 0 },
 		/*1*/	{ SERV1_ADDR	, 0 		, 0 	, controller_PCA9685_0	, 0 	, 0 },
@@ -164,11 +162,13 @@ void servoController_init(servo_t* servos, uint8_t num) {
 
 	/* attach servos and define their initial position */
 	for(i=0; i<num;i++){
+		if(servos[i].init_pos<0) servos[i].init_pos = 0;
+		if(servos[i].init_pos>180) servos[i].init_pos = 180;
 		AttachedServoList[servos[i].servo].attached=1;
 		AttachedServoList[servos[i].servo].init_pos=servos[i].init_pos;
-		if(servos[i].servo < SERV16){
+		if(servos[i].servo <= SERV15){
 			use_PCA9685_0=1;
-		}else{
+		}else if(servos[i].servo <= SERV24){
 			use_sAPI=1;
 		}
 	}
@@ -190,7 +190,7 @@ void servoController_init(servo_t* servos, uint8_t num) {
 
 void servoController_initialPosition() {
 	uint8_t n_servo;
-	for (n_servo = 0; n_servo < SERVO_TOTALNUMBER; n_servo++) {
+	for (n_servo = 0; n_servo < SERVO_TOTAL_NUMBER; n_servo++) {
 		if (AttachedServoList[n_servo].attached) {
 			AttachedServoList[n_servo].angle = AttachedServoList[n_servo].init_pos;
 			AttachedServoList[n_servo].associatedFunction(n_servo);
@@ -201,6 +201,8 @@ void servoController_initialPosition() {
 
 void servoController_setServo(uint8_t n_servo, uint8_t angle) {
 	if (AttachedServoList[n_servo].attached) {
+		if(angle<0) angle = 0;
+		if(angle>180) angle = 180;
 		AttachedServoList[n_servo].angle = angle;
 		AttachedServoList[n_servo].refresh = 1;
 	}
@@ -208,6 +210,8 @@ void servoController_setServo(uint8_t n_servo, uint8_t angle) {
 
 void servoController_moveServo(uint8_t n_servo, uint8_t angle) {
 	if (AttachedServoList[n_servo].attached) {
+		if(angle<0) angle = 0;
+		if(angle>180) angle = 180;
 		AttachedServoList[n_servo].angle = angle;
 		AttachedServoList[n_servo].associatedFunction(n_servo);
 		AttachedServoList[n_servo].refresh = 0;
@@ -215,7 +219,7 @@ void servoController_moveServo(uint8_t n_servo, uint8_t angle) {
 }
 void servoController_refreshAll() {
 	uint8_t n_servo;
-	for (n_servo = 0; n_servo < SERVO_TOTALNUMBER; n_servo++) {
+	for (n_servo = 0; n_servo < SERVO_TOTAL_NUMBER; n_servo++) {
 		if (AttachedServoList[n_servo].refresh) {
 			AttachedServoList[n_servo].associatedFunction(n_servo);
 			AttachedServoList[n_servo].refresh = 0;
@@ -242,7 +246,7 @@ void servoController_finalize() {
 		use_sAPI=0;
 	}
 	/* detach servos and reset their initial position */
-	for(i=0; i<SERVO_TOTALNUMBER;i++){
+	for(i=0; i<SERVO_TOTAL_NUMBER;i++){
 		AttachedServoList[i].attached=0;
 		AttachedServoList[i].init_pos=0;
 	}
