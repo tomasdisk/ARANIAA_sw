@@ -45,7 +45,7 @@
 
 /*==================[macros and definitions]=================================*/
 
-#define USED_SERVO 12
+#define USED_SERVO 16
 
 /*==================[internal data declaration]==============================*/
 
@@ -67,15 +67,20 @@ taskPointer_t task_B = TASK_B;
 /*==================[internal functions definition]==========================*/
 
 void TASK_A() {
-	uint8_t i;
+	uint8_t i = 0;
 	digitalWrite(LEDR, 0);
 	digitalWrite(LEDB, 0);
 
 	while (digitalRead(TEC1)) {
 		digitalWrite(LEDG, 1);
-		for (i = 0; i < USED_SERVO; i++) {
-			servoController_setServo(i, 180);
-		}
+		if (i == 0)
+			i = 180;
+		else
+			i = 0;
+		//for (i = 0; i < USED_SERVO; i++) {
+		servoController_setServo(SERV15, i);
+		//}
+		delay(1000);
 		servoController_refreshAll();
 		digitalWrite(LEDG, 0);
 		delay(5000);
@@ -129,24 +134,12 @@ int main(void) {
 	digitalConfig(LED2, OUTPUT);
 	digitalConfig(LED3, OUTPUT);
 
-	/* Inicializar UART_USB a 115200 baudios */
-	uartConfig(UART_USB, 115200);
-
-	/* Envía info del programa por la uart */
-	uartWriteString( UART_USB, (uint8_t*)"Bienvenido al servo controller test\r\n" );
-	uartWriteString( UART_USB, (uint8_t*)"El test tiene dos tareas y se cambia de una a otra con TEC1\r\n" );
-	uartWriteString( UART_USB, (uint8_t*)"*Tarea 1 (LED verde) => mover 12 servos de 0 a 180 grados\r\n" );
-	uartWriteString( UART_USB, (uint8_t*)"*Tarea 2 (LED azul) => no hace nada\r\n" );
-	uartWriteString( UART_USB, (uint8_t*)"Las tareas inician una vez iniciado todos los servos y prendido el LED3\r\n" );
-	uartWriteString( UART_USB, (uint8_t*)"Se finaliza el programa con TEC4" );
-	uartWriteString( UART_USB, (uint8_t*)"Una vez apagado el LED3 y prendido el LED rojo el programa espera por un reset\r\n" );
-
 	/* Definir 12 Servos */
 	servos[0].servo = SERV0;
 	servos[0].init_pos = 0;
 	for (i = 1; i < USED_SERVO; i++) {
 		servos[i].servo = i;
-		servos[i].init_pos = 15 * i;
+		servos[i].init_pos = 0;
 	}
 
 	/* Attach Servos */
@@ -154,20 +147,32 @@ int main(void) {
 
 	/* Mover Servos a la posicion inicial */
 	servoController_initialPosition();
+	delay(2000);
 
 	/* Usar Servo */
-	servoController_moveServo(SERV0, 180);
-
+	//servoController_moveServo(SERV15, 180);
 	/* Usar Output */
 	digitalWrite(LED3, 1);
 
 	delay(1000);
+	int16_t n;
 
 	/* -------------  INICIAR SCHEDULER  ------------- */
 
 	while (digitalRead(TEC4)) {
-		task_A();
-		task_B();
+		//task_A();
+		//task_B();
+		for (n = 0; n < USED_SERVO; n++) {
+			servoController_moveServo(n, 0);
+			delay(100);
+		}
+		delay(5000);
+		for (n = 0; n < USED_SERVO; n++) {
+			servoController_moveServo(n, 180);
+			delay(100);
+		}
+		delay(5000);
+
 	}
 
 	/* ------------- FINALIZO  SCHEDULER ------------- */

@@ -41,34 +41,23 @@
 
 #include "sAPI.h"         /* <= sAPI header */
 
-#include "pca9685Driver.h"         /* <= PCA9685 driver header */
+#include "servoController.h"        /* <= servoController header */
 
 /*==================[macros and definitions]=================================*/
 
+#define USED_SERVO 1
+
 /*==================[internal data declaration]==============================*/
-
-uint16_t pos0 = 144; // ancho de pulso en cuentas para pocicion 0°
-uint16_t pos180 = 470; // ancho de pulso en cuentas para la pocicion 180°
-
-uint16_t posActual = 144;
 
 /*==================[internal functions declaration]=========================*/
 
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
-		int32_t out_max);
-
-void setServo(uint8_t n_servo, int16_t angulo);
-
 /*==================[internal data definition]===============================*/
+
+servo_t servos[USED_SERVO];
 
 /*==================[external data definition]===============================*/
 
 /*==================[internal functions definition]==========================*/
-
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
-		int32_t out_max) {
-	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
 
 char* itoa(int value, char* result, int base) {
 	// check that the base if valid
@@ -98,13 +87,6 @@ char* itoa(int value, char* result, int base) {
 		*ptr1++ = tmp_char;
 	}
 	return result;
-}
-
-void setServo(uint8_t n_servo, int16_t angulo) {
-	int16_t duty;
-	duty = (int16_t) map((int32_t) angulo, 0, 180, (int32_t) pos0,
-			(int32_t) pos180);
-	PCA9685_setPWM(n_servo, 0, duty);
 }
 
 /*==================[external functions definition]==========================*/
@@ -140,41 +122,45 @@ int main(void) {
 	digitalConfig(LED2, OUTPUT);
 	digitalConfig(LED3, OUTPUT);
 
-	/* Configurar Servo */
-	PCA9685_begin(PCA9685_ADDR);
-	PCA9685_setPWMFreq(50);
+	/* Definir 12 Servos */
+	servos[0].servo = SERV15;
+	servos[0].init_pos = 90;
+
+	/* Attach Servos */
+	servoController_init(servos, USED_SERVO);
+
+	/* Mover Servos a la posicion inicial */
+	servoController_initialPosition();
+	delay(2000);
 
 	/* Usar Servo */
-
+	//servoController_moveServo(SERV15, 180);
 	/* Usar Output */
 	digitalWrite(LED3, 1);
 
-	int16_t n;
-	int16_t duty;
-	uint8_t dato = 0;
+	delay(1000);
+	uartWriteString(UART_USB, "inicio..");
+	uint8_t dato = 0, angle = 200;
 
-	itoa( posActual, uartBuff, 10 ); /* base 10 significa decimal */
-	uartWriteString( UART_USB, uartBuff );
+	/* -------------  INICIAR SCHEDULER  ------------- */
 
-	/* ------------- REPETIR POR SIEMPRE ------------- */
 	while (1) {
-		//for (duty = pos0; duty < pos180; duty = duty + 10) {
+
 		dato = uartReadByte(UART_USB);
-	    if (dato) {
-	    			//uartWriteByte( UART_232, dato );
-	    			if (dato == '1') {
-	    				posActual = posActual + 1;
-	    			}
-	    			if (dato == '0') {
-	    				posActual = posActual - 1;
-	    			}
-	    			itoa( posActual, uartBuff, 10 ); /* base 10 significa decimal */
-	    			uartWriteString( UART_USB, uartBuff );
-	    			uartWriteString( UART_USB, "\r\n" );
-	    			PCA9685_setPWM(0, 0, posActual);
-	    		}
+		if (dato) {
+			angle += 45;
+			if (angle > 180)
+				angle = 0;
+			itoa(angle, uartBuff, 10); /* base 10 significa decimal */
+			uartWriteString(UART_USB, uartBuff);
+			uartWriteString(UART_USB, "\r\n");
+			servoController_moveServo(15, angle);
+			delay(200);
+		}
 
 	}
+
+	/* ------------- FINALIZO  SCHEDULER ------------- */
 
 	/* NO DEBE LLEGAR NUNCA AQUI, debido a que a este programa no es llamado
 	 por ningun S.O. */

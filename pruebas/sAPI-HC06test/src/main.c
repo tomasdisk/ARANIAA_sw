@@ -32,7 +32,7 @@
  */
 
 /*
- * Date: 2016-07-03
+ * Date: 2016-04-26
  */
 
 /*==================[inclusions]=============================================*/
@@ -45,19 +45,14 @@
 
 /*==================[macros and definitions]=================================*/
 
+#define PCA9685_ADDR 0x40
+
 /*==================[internal data declaration]==============================*/
 
 uint16_t pos0 = 144; // ancho de pulso en cuentas para pocicion 0°
 uint16_t pos180 = 470; // ancho de pulso en cuentas para la pocicion 180°
 
-uint16_t posActual = 144;
-
 /*==================[internal functions declaration]=========================*/
-
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
-		int32_t out_max);
-
-void setServo(uint8_t n_servo, int16_t angulo);
 
 /*==================[internal data definition]===============================*/
 
@@ -65,11 +60,14 @@ void setServo(uint8_t n_servo, int16_t angulo);
 
 /*==================[internal functions definition]==========================*/
 
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
-		int32_t out_max) {
-	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
+/*==================[external functions definition]==========================*/
 
+/**
+ * C++ version 0.4 char* style "itoa":
+ * Written by Lukás Chmela
+ * Released under GPLv3.
+
+ */
 char* itoa(int value, char* result, int base) {
 	// check that the base if valid
 	if (base < 2 || base > 36) {
@@ -100,18 +98,8 @@ char* itoa(int value, char* result, int base) {
 	return result;
 }
 
-void setServo(uint8_t n_servo, int16_t angulo) {
-	int16_t duty;
-	duty = (int16_t) map((int32_t) angulo, 0, 180, (int32_t) pos0,
-			(int32_t) pos180);
-	PCA9685_setPWM(n_servo, 0, duty);
-}
-
-/*==================[external functions definition]==========================*/
-
 /* FUNCION PRINCIPAL, PUNTO DE ENTRADA AL PROGRAMA LUEGO DE RESET. */
 int main(void) {
-	static uint8_t uartBuff[10];
 
 	/* ------------- INICIALIZACIONES ------------- */
 
@@ -121,8 +109,6 @@ int main(void) {
 	/* Inicializar el conteo de Ticks con resolución de 1ms, sin tickHook */
 	tickConfig(1, 0);
 
-	/*Iniciar terminal*/
-	uartConfig(UART_USB, 115200);
 	/* Inicializar DigitalIO */
 	digitalConfig(0, ENABLE_DIGITAL_IO);
 
@@ -140,39 +126,78 @@ int main(void) {
 	digitalConfig(LED2, OUTPUT);
 	digitalConfig(LED3, OUTPUT);
 
+	/* Inicializar UART_232 a 115200 baudios */
+	uartConfig(UART_232, 9600);
+
 	/* Configurar Servo */
 	PCA9685_begin(PCA9685_ADDR);
 	PCA9685_setPWMFreq(50);
 
-	/* Usar Servo */
-
-	/* Usar Output */
-	digitalWrite(LED3, 1);
-
-	int16_t n;
-	int16_t duty;
 	uint8_t dato = 0;
+//	uint8_t dato1 = 1;
+//	uint8_t dato2 = 78;
+//	int32_t dato3 = 1234;
 
-	itoa( posActual, uartBuff, 10 ); /* base 10 significa decimal */
-	uartWriteString( UART_USB, uartBuff );
+	/* Buffer */
+	static uint8_t uartBuff[10];
+
+//   uartWriteByte( UART_232, 'h' - 32 );   /* Envía 'H' */
+//   uartWriteByte( UART_232, 'A' + 32 );   /* Envía 'a' */
+//
+//   /* Enviar un Enter */
+//   uartWriteByte( UART_232, '\r' ); /* Envía '\r', retorno de carro */
+//   uartWriteByte( UART_232, '\n' ); /* Envía '\n', nueva línea      */
+//
+//   uartWriteByte( UART_232, dato1 + 48 ); /* Envía '1' */
+//   uartWriteByte( UART_232, ' ' );        /* Envía ' ' */
+//   uartWriteByte( UART_232, '1' );        /* Envía '1' */
+//   uartWriteByte( UART_232, 32 );         /* Envía ' ' */
+//
+//   /* Convertir un número entero de 2 dígitos ASCII y enviar */
+//   uartWriteByte( UART_232, (dato2/10) + 48 ); /* Envía '7' */
+//   uartWriteByte( UART_232, (dato2%10) + 48 ); /* Envía '8' */
+//
+//   uartWriteString( UART_232, "\r\n" ); /* Enviar un Enter */
+//
+//   uartWriteByte( UART_232, 'H' );  /* Envía 'H' */
+//   uartWriteByte( UART_232, 'o' );  /* Envía 'o' */
+//   uartWriteByte( UART_232, 'l' );  /* Envía 'l' */
+//   uartWriteByte( UART_232, 'a' );  /* Envía 'a' */
+//   uartWriteByte( UART_232, '\r' ); /* Envía '\r', retorno de carro */
+//   uartWriteByte( UART_232, '\n' ); /* Envía '\n', nueva línea      */
+//
+//   uartWriteString( UART_232, "Chau\r\n" ); /* Envía "Chau\r\n" */
+//
+//   uint8_t miTexto[] = "Hola de nuevo\r\n";
+//
+//   uartWriteString( UART_232, miTexto ); /* Envía "Hola de nuevo\r\n" */
+//
+//   miTexto[0] = 'h';
+//   uartWriteString( UART_232, miTexto ); /* Envía "hola de nuevo\r\n" */
+//
+//   /* Conversión de muestra entera a ascii con base decimal usando itoa() */
+//   itoa( dato3, uartBuff, 10 ); /* base 10 significa decimal */
+//   uartWriteString( UART_232, uartBuff );
+//
+//   uartWriteString( UART_232, "\r\n" ); /* Enviar un Enter */
 
 	/* ------------- REPETIR POR SIEMPRE ------------- */
 	while (1) {
-		//for (duty = pos0; duty < pos180; duty = duty + 10) {
-		dato = uartReadByte(UART_USB);
-	    if (dato) {
-	    			//uartWriteByte( UART_232, dato );
-	    			if (dato == '1') {
-	    				posActual = posActual + 1;
-	    			}
-	    			if (dato == '0') {
-	    				posActual = posActual - 1;
-	    			}
-	    			itoa( posActual, uartBuff, 10 ); /* base 10 significa decimal */
-	    			uartWriteString( UART_USB, uartBuff );
-	    			uartWriteString( UART_USB, "\r\n" );
-	    			PCA9685_setPWM(0, 0, posActual);
-	    		}
+
+		/* Recibir byte de la UART_232 y guardarlo en la variable dato */
+		dato = uartReadByte(UART_232);
+
+		/* Si el byte recibido es distinto de 0 (caracter NULL) se reenvía
+		 a la UART_232 realizando un eco de lo que llega */
+		if (dato) {
+			//uartWriteByte( UART_232, dato );
+			if (dato == '1') {
+				PCA9685_setPWM(8, 0, pos180);
+			}
+			if (dato == '0') {
+				PCA9685_setPWM(8, 0, pos0);
+			}
+		}
 
 	}
 

@@ -50,7 +50,7 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
-#define SERVO_TOTAL_NUMBER   25 /* 16 from PCA9685 and 9 from sAPI_Servo */
+#define SERVO_TOTAL_NUMBER   16 /* 16 from PCA9685 and 9 from sAPI_Servo */
 
 /*==================[typedef]================================================*/
 
@@ -72,15 +72,6 @@ typedef enum {
 	SERV13,
 	SERV14,
 	SERV15,
-	SERV16,
-	SERV17,
-	SERV18,
-	SERV19,
-	SERV20,
-	SERV21,
-	SERV22,
-	SERV23,
-	SERV24
 } ServoControllerMap_t;
 
 typedef struct {
@@ -92,7 +83,7 @@ typedef struct {
 
 /*==================[external functions declaration]=========================*/
 
-void servoController_init(servo_t* servos, uint8_t num);
+void servoController_init(servo_t* servos,  uint8_t num);
 void servoController_initialPosition();
 void servoController_setServo(uint8_t n_servo, uint8_t angle);
 void servoController_moveServo(uint8_t n_servo, uint8_t angle);
