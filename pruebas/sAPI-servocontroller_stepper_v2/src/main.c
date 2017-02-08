@@ -169,7 +169,8 @@ void printS_c(uint8_t n_servo){
 
 }
 void printS_for(){
-	for(uint8_t i=0; i<USED_SERVO;i++){
+	uint8_t i;
+	for(i=0; i<USED_SERVO;i++){
 			printS_c(i);
 	}
 }
@@ -180,61 +181,61 @@ void initServos(){
 		//PATA 1
 			//LONG
 		servos[0].servo = SERV0;
-		servos[0].init_pos = 50;
+		servos[0].init_pos = 100;
 		servos[0].type = LON;
 		servos[0].reverse = 0;
 			//MID
 		servos[1].servo = SERV1;
-		servos[1].init_pos = 50;
+		servos[1].init_pos =  100;
 		servos[1].type = MID;
 		servos[1].reverse = 1;
 			//SHORT
 		servos[2].servo = SERV2;
-		servos[2].init_pos = 50;
+		servos[2].init_pos = 100;
 		servos[2].type = SHORT;
 		//PATA 2
 			//LONG
 		servos[3].servo = SERV4;
-		servos[3].init_pos = 50;
+		servos[3].init_pos = 100;
 		servos[3].type = LON;
 		servos[3].reverse = 1;
 			//MID
 		servos[4].servo = SERV5;
-		servos[4].init_pos = 50;
+		servos[4].init_pos = 100;
 		servos[4].type = MID;
 			//SHORT
 		servos[5].servo = SERV6;
-		servos[5].init_pos = 50;
+		servos[5].init_pos = 100;
 		servos[5].type = SHORT;
 		servos[5].reverse = 1;
 		//PATA 3
 			//LONG
 		servos[6].servo = SERV8;
-		servos[6].init_pos = 50;
+		servos[6].init_pos = 100;
 		servos[6].type = LON;
 			//MID
 		servos[7].servo = SERV9;
-		servos[7].init_pos = 50;
+		servos[7].init_pos = 100;
 		servos[7].type = MID;
 		servos[7].reverse = 1;
 			//SHORT
 		servos[8].servo = SERV10;
-		servos[8].init_pos = 50;
+		servos[8].init_pos = 100;
 		servos[8].type = SHORT;
 		servos[8].reverse = 1;
 		//PATA 4
 			//LONG
 		servos[9].servo = SERV12;
-		servos[9].init_pos = 50;
+		servos[9].init_pos = 100;
 		servos[9].type = LON;
 		servos[9].reverse = 1;
 			//MID
 		servos[10].servo = SERV13;
-		servos[10].init_pos = 50;
+		servos[10].init_pos = 100;
 		servos[10].type = MID;
 			//SHORT
 		servos[11].servo = SERV14;
-		servos[11].init_pos = 50;
+		servos[11].init_pos = 100;
 		servos[11].type = SHORT;
 
 	/* Attach Servos */
@@ -249,10 +250,11 @@ void moveServos(){
 	static uint8_t uartBuff[10];
 	int8_t servoMover;
 	int16_t angle;
+	uint8_t i;
 
 	TypeSecuencia sec = secuencer_getSecuencia();
 
-	for(uint8_t i = 0;i<4;i++){
+	for(i = 0;i<4;i++){
 		uint8_t servos = (sec.servos >> i*4) & 0x000F ;
 		switch(servos){
 		case 2:
@@ -315,7 +317,7 @@ int main(void) {
 
 	while (1) {
 
-		delay(20);
+		delay(1);
 
 		if(!servoController_ifEnd()){
 			end = servoController_refreshAll();
@@ -326,11 +328,13 @@ int main(void) {
 				uartWriteString(UART_USB, "Termino");
 				uartWriteString(UART_USB, "\r\n");
 				printS_for();
-				delay(1000);
+				delay(100);
 				moveServos();
 				}
-		}
+
 }
+
+	}
 	/* ------------- FINALIZO  SCHEDULER ------------- */
 
 	/* NO DEBE LLEGAR NUNCA AQUI, debido a que a este programa no es llamado

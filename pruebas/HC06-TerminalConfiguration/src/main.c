@@ -6,6 +6,7 @@
 #include "sAPI.h"         /* <= sAPI header */
 #include "hc06_driver.h"         /* <= sAPI header */
 
+
 /*==================[macros and definitions]=================================*/
 
 /*==================[internal data declaration]==============================*/
@@ -25,10 +26,15 @@
 /* FUNCION PRINCIPAL, PUNTO DE ENTRADA AL PROGRAMA LUEGO DE RESET. */
 int main(void){
 
+
+
+
+
    /* ------------- INICIALIZACIONES ------------- */
 
    /* Inicializar la placa */
    boardConfig();
+
 
    /* Inicializar el conteo de Ticks con resolución de 1ms, sin tickHook */
    tickConfig( 1, 0 );
@@ -54,6 +60,7 @@ int main(void){
 
    uartConfig( UART_USB, 115200);
    HC06_init(115200);
+
    uint8_t dato  = 0;
    uint8_t dato2 =0;
 
@@ -64,6 +71,7 @@ int main(void){
    uartWriteString(UART_USB,"Escriba comando AT\r\n");
    uartWriteString(UART_USB,"Apretar tecla '-' para enviar comando\r\n");
 
+   digitalWrite( LEDB, ON );
    while(1) {
       dato  = HC06_ReadByte();
       dato2 = uartReadByte( UART_USB );

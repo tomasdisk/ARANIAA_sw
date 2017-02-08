@@ -129,10 +129,10 @@ static attachedServo_t ServoList[SERVO_TOTAL_NUMBER] = {
 };
 static TypeLimits LimitsList[4] = {
 /*	TYPE	| Duty min	| Duty max */
-/*0*/	        { 125	  , 460	},
-/*L*/	        { 190	  , 395 },
-/*M*/	        { 150	  , 450 },
-/*S*/	        { 220	  , 385 },
+/*0*/	        { 130	  , 460	},
+/*L*/	        { 190	  , 460 },
+/*M*/	        { 214	  , 450 },
+/*S*/	        { 230	  , 340 },
 };
 
 /*==================[external data definition]===============================*/

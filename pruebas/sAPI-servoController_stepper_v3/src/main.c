@@ -43,7 +43,6 @@
 #include "sAPI.h"         /* <= sAPI header */
 #include "secuencer.h"
 
-
 /*==================[macros and definitions]=================================*/
 
 #define USED_SERVO 12
@@ -53,13 +52,12 @@ uint8_t count = 0;
 bool_t end = 0;
 
 /*==================[internal functions declaration]=========================*/
-char* itoa(int value, char* result, int base) ;
+char* itoa(int value, char* result, int base);
 void initIO();
 void printS(uint8_t n_servo);
 void printS_c(uint8_t n_servo);
 void printS_for();
 void moveServos();
-
 
 void initServos();
 
@@ -102,140 +100,143 @@ char* itoa(int value, char* result, int base) {
 	return result;
 }
 
-void initIO(){
+void initIO() {
 
 	/* Inicializar DigitalIO */
-		digitalConfig(0, ENABLE_DIGITAL_IO);
+	digitalConfig(0, ENABLE_DIGITAL_IO);
 
-		/* Configuración de pines de entrada para Teclas de la CIAA-NXP */
-		digitalConfig(TEC1, INPUT);
-		digitalConfig(TEC2, INPUT);
-		digitalConfig(TEC3, INPUT);
-		digitalConfig(TEC4, INPUT);
+	/* Configuración de pines de entrada para Teclas de la CIAA-NXP */
+	digitalConfig(TEC1, INPUT);
+	digitalConfig(TEC2, INPUT);
+	digitalConfig(TEC3, INPUT);
+	digitalConfig(TEC4, INPUT);
 
-		/* Configuración de pines de salida para Leds de la CIAA-NXP */
-		digitalConfig(LEDR, OUTPUT);
-		digitalConfig(LEDG, OUTPUT);
-		digitalConfig(LEDB, OUTPUT);
-		digitalConfig(LED1, OUTPUT);
-		digitalConfig(LED2, OUTPUT);
-		digitalConfig(LED3, OUTPUT);
+	/* Configuración de pines de salida para Leds de la CIAA-NXP */
+	digitalConfig(LEDR, OUTPUT);
+	digitalConfig(LEDG, OUTPUT);
+	digitalConfig(LEDB, OUTPUT);
+	digitalConfig(LED1, OUTPUT);
+	digitalConfig(LED2, OUTPUT);
+	digitalConfig(LED3, OUTPUT);
 
 }
 /* FUNCION que se ejecuta cada vezque ocurre un Tick. */
-bool_t myTickHook(void *ptr){
-   FLAG1 = 1;
-   count++;
-   return 1;
+bool_t myTickHook(void *ptr) {
+	FLAG1 = 1;
+	count++;
+	return 1;
 }
 
-void TASK1(){
-	if(count == 50)
+void TASK1() {
+	if (count == 50)
 		uartWriteString(UART_USB, "Paso un segundo");
 	end = servoController_refreshAll();
 }
 
-void printS(uint8_t n_servo){
+void printS(uint8_t n_servo) {
 	static uint8_t uartBuff[10];
 
-	itoa(servos[n_servo].servo, uartBuff,10);
+	itoa(servos[n_servo].servo, uartBuff, 10);
 	uartWriteString(UART_USB, "Servo ");
 	uartWriteString(UART_USB, uartBuff);
 	uartWriteString(UART_USB, " pos: ");
-	itoa(servoController_getServoPos(servos[n_servo].servo), uartBuff,10);
+	itoa(servoController_getServoPos(servos[n_servo].servo), uartBuff, 10);
 	uartWriteString(UART_USB, uartBuff);
 	uartWriteString(UART_USB, "\r\n");
 
-
 }
 
-void printS_c(uint8_t n_servo){
+void printS_c(uint8_t n_servo) {
 
 	static uint8_t uartBuff[10];
 
-	itoa(servos[n_servo].servo, uartBuff,10);
+	itoa(servos[n_servo].servo, uartBuff, 10);
 	uartWriteString(UART_USB, "Servo  ");
 	uartWriteString(UART_USB, uartBuff);
 	uartWriteString(UART_USB, "\r\n");
 	uartWriteString(UART_USB, "pos: ");
-	itoa(servoController_getServoPos(servos[n_servo].servo), uartBuff,10);
+	itoa(servoController_getServoPos(servos[n_servo].servo), uartBuff, 10);
 	uartWriteString(UART_USB, uartBuff);
 	uartWriteString(UART_USB, "\r\n");
-	itoa(servoController_getServoDuty(servos[n_servo].servo), uartBuff,10);
+	itoa(servoController_getServoDuty(servos[n_servo].servo), uartBuff, 10);
 	uartWriteString(UART_USB, "duty: ");
 	uartWriteString(UART_USB, uartBuff);
 	uartWriteString(UART_USB, "\r\n");
 
-
 }
-void printS_for(){
-	for(uint8_t i=0; i<USED_SERVO;i++){
-			printS_c(i);
+void printS_for() {
+	uint8_t i;
+	for (i = 0; i < USED_SERVO; i++) {
+		printS_c(i);
 	}
 }
 
-void initServos(){
+void initServos() {
 
 	/* Definir 12 Servos */
-		//PATA 1
-			//LONG
-		servos[0].servo = SERV0;
-		servos[0].init_pos = 50;
-		servos[0].type = LON;
-		servos[0].reverse = 0;
-			//MID
-		servos[1].servo = SERV1;
-		servos[1].init_pos = 50;
-		servos[1].type = MID;
-		servos[1].reverse = 1;
-			//SHORT
-		servos[2].servo = SERV2;
-		servos[2].init_pos = 50;
-		servos[2].type = SHORT;
-		//PATA 2
-			//LONG
-		servos[3].servo = SERV4;
-		servos[3].init_pos = 50;
-		servos[3].type = LON;
-		servos[3].reverse = 1;
-			//MID
-		servos[4].servo = SERV5;
-		servos[4].init_pos = 50;
-		servos[4].type = MID;
-			//SHORT
-		servos[5].servo = SERV6;
-		servos[5].init_pos = 50;
-		servos[5].type = SHORT;
-		servos[5].reverse = 1;
-		//PATA 3
-			//LONG
-		servos[6].servo = SERV8;
-		servos[6].init_pos = 50;
-		servos[6].type = LON;
-			//MID
-		servos[7].servo = SERV9;
-		servos[7].init_pos = 50;
-		servos[7].type = MID;
-		servos[7].reverse = 1;
-			//SHORT
-		servos[8].servo = SERV10;
-		servos[8].init_pos = 50;
-		servos[8].type = SHORT;
-		servos[8].reverse = 1;
-		//PATA 4
-			//LONG
-		servos[9].servo = SERV12;
-		servos[9].init_pos = 50;
-		servos[9].type = LON;
-		servos[9].reverse = 1;
-			//MID
-		servos[10].servo = SERV13;
-		servos[10].init_pos = 50;
-		servos[10].type = MID;
-			//SHORT
-		servos[11].servo = SERV14;
-		servos[11].init_pos = 50;
-		servos[11].type = SHORT;
+	//PATA 1 --------------------------------------------------------
+	//LONG
+	servos[0].servo = SERV0;
+	servos[0].init_pos = 80;
+	servos[0].type = LON;
+	servos[0].reverse = 0;
+	//MID
+	servos[1].servo = SERV1;
+	servos[1].init_pos = 20;
+	servos[1].type = MID;
+	servos[1].reverse = 1;
+	//SHORT
+	servos[2].servo = SERV2;
+	servos[2].init_pos = 84;
+	servos[2].type = SHORT;
+	servos[2].reverse = 1;
+	//PATA 2 --------------------------------------------------------
+	//LONG
+	servos[3].servo = SERV4;
+	servos[3].init_pos = 84;
+	servos[3].type = LON;
+	servos[3].reverse = 1;
+	//MID
+	servos[4].servo = SERV5;
+	servos[4].init_pos = 20;
+	servos[4].type = MID;
+	servos[5].reverse = 0;
+	//SHORT
+	servos[5].servo = SERV6;
+	servos[5].init_pos = 90;
+	servos[5].type = SHORT;
+	servos[5].reverse = 0;
+	//PATA 3 --------------------------------------------------------
+	//LONG
+	servos[6].servo = SERV8;
+	servos[6].init_pos = 80;
+	servos[6].type = LON;
+	servos[5].reverse = 0;
+	//MID
+	servos[7].servo = SERV9;
+	servos[7].init_pos = 20;
+	servos[7].type = MID;
+	servos[7].reverse = 1;
+	//SHORT
+	servos[8].servo = SERV10;
+	servos[8].init_pos = 80;
+	servos[8].reverse = 1;
+	//PATA 4 --------------------------------------------------------
+	//LONG
+	servos[9].servo = SERV12;
+	servos[9].init_pos = 80;
+	servos[9].type = LON;
+	servos[9].reverse = 1;
+	//MID
+	servos[10].servo = SERV13;
+	servos[10].init_pos = 20;
+	servos[10].type = MID;
+	servos[5].reverse = 0;
+	//SHORT
+	servos[11].servo = SERV14;
+	servos[11].init_pos = 85;
+	servos[11].type = SHORT;
+	servos[11].reverse = 0;
 
 	/* Attach Servos */
 	servoController_init(servos, USED_SERVO);
@@ -245,38 +246,68 @@ void initServos(){
 
 }
 
-void moveServos(){
+void doServo(uint8_t servoMover, uint8_t mov, bool_t dir) {
+	int16_t angle;
+
+	angle = servoController_getServoPos(servoMover);
+	if (dir)
+		angle += mov;
+	else
+		angle -= mov;
+	if (angle > 100) //Como los angulos son int8_t el valor maximo es 127 y no puede ajustarse dentro de servoController
+		angle = 100; //No es necesario hacer la comprobacion angle < 0, se resuelve dentro de servoController
+
+	//angle = sec.mov; //sin posicion relativa
+
+	/////
+
+	servoController_setServo(servoMover, (int8_t) angle, 2);
+}
+
+void moveServos() {
 	static uint8_t uartBuff[10];
 	int8_t servoMover;
-	int16_t angle;
+
+	uint8_t i;
 
 	TypeSecuencia sec = secuencer_getSecuencia();
 
-	for(uint8_t i = 0;i<4;i++){
-		uint8_t servos = (sec.servos >> i*4) & 0x000F ;
-		switch(servos){
+	for (i = 0; i < 4; i++) {
+		uint8_t servos = (sec.servos >> i * 4) & 0x000F;
+		switch (servos) {
 		case 2:
-			servoMover = SERVO0 + 4*i;
+			doServo(SERVO0 + 4 * i, sec.mov, sec.dir);
+			break;
+		case 3:
+			doServo(SERVO1 + 4 * i, sec.mov, sec.dir);
 			break;
 		case 4:
-			servoMover = SERVO1 + 4*i;
+			doServo(SERVO2 + 4 * i, sec.mov, sec.dir);
+			break;
+		case 5:
+			doServo(SERVO0 + 4 * i, sec.mov, sec.dir);
+			doServo(SERVO1 + 4 * i, sec.mov, sec.dir);
+			break;
+		case 6:
+			doServo(SERVO0 + 4 * i, sec.mov, sec.dir);
+			doServo(SERVO2 + 4 * i, sec.mov, sec.dir);
+			break;
+		case 7:
+			doServo(SERVO1 + 4 * i, sec.mov, sec.dir);
+			doServo(SERVO2 + 4 * i, sec.mov, sec.dir);
 			break;
 		case 8:
-			servoMover = SERVO2 + 4*i;
+			doServo(SERVO0 + 4 * i, sec.mov, sec.dir);
+			doServo(SERVO1 + 4 * i, sec.mov, sec.dir);
+			doServo(SERVO2 + 4 * i, sec.mov, sec.dir);
 			break;
 		}
-		itoa(servoMover, uartBuff,10);
+		itoa(servoMover, uartBuff, 10);
 		uartWriteString(UART_USB, "La secuencia es ");
 		uartWriteString(UART_USB, uartBuff);
 		uartWriteString(UART_USB, "\r\n");
-		angle = servoController_getServoPos(servoMover);
-		if(sec.dir)
-			angle += sec.mov;
-		else
-			angle -= sec.mov;
-		if(angle > 100)   //Como los angulos son int8_t el valor maximo es 127 y no puede ajustarse dentro de servoController
-			angle = 100; //No es necesario hacer la comprobacion angle < 0, se resuelve dentro de servoController
-		servoController_setServo(servoMover,(int8_t)angle,2);
+		//////
+
 	}
 }
 
@@ -293,7 +324,7 @@ int main(void) {
 	boardConfig();
 	initIO();
 
-	tickConfig( 1, 0 );
+	tickConfig(1, 0);
 	//tickConfig(40, myTickHook );
 	//delay(3000);
 	//digitalWrite( LEDB, ON );
@@ -301,7 +332,7 @@ int main(void) {
 	uartConfig(UART_USB, 115200);
 	initServos();
 	//delay(2000);
-	digitalWrite( LEDB, ON );
+	digitalWrite(LEDB, ON);
 	digitalWrite(LED3, 1);
 	delay(1000);
 	uartWriteString(UART_USB, "inicio..");
@@ -315,22 +346,23 @@ int main(void) {
 
 	while (1) {
 
-		delay(20);
+		delay(5);
 
-		if(!servoController_ifEnd()){
+		if (!servoController_ifEnd()) {
 			end = servoController_refreshAll();
 
 			printS(SERV0);
 
-			if(end){
+			if (end) {
 				uartWriteString(UART_USB, "Termino");
 				uartWriteString(UART_USB, "\r\n");
 				printS_for();
 				delay(1000);
 				moveServos();
-				}
+			}
 		}
-}
+
+	}
 	/* ------------- FINALIZO  SCHEDULER ------------- */
 
 	/* NO DEBE LLEGAR NUNCA AQUI, debido a que a este programa no es llamado
