@@ -34,7 +34,7 @@
 /*
  * Date: 2016-07-03
  */
-
+ 
 /*==================[inclusions]=============================================*/
 
 #include "main.h"         /* <= own header */
@@ -47,7 +47,7 @@
 
 /*==================[macros and definitions]=================================*/
 
-#define USED_SERVO 3
+#define USED_SERVO 12
 
 /*==================[internal data declaration]==============================*/
 
@@ -128,12 +128,30 @@ int main(void) {
 	HC06_init(115200);
 
 	/* Definir 12 Servos */
-	servos[0].servo = SERV4;
-	servos[0].init_pos = 90;
-	servos[1].servo = SERV5;
-	servos[1].init_pos = 90;
-	servos[2].servo = SERV6;
-	servos[2].init_pos = 90;
+	servos[0].servo = SERV0;
+	servos[0].init_pos = 255;
+	servos[1].servo = SERV1;
+	servos[1].init_pos = 255;
+	servos[2].servo = SERV2;
+	servos[2].init_pos = 255;
+	servos[3].servo = SERV4;
+	servos[3].init_pos = 255;
+	servos[4].servo = SERV5;
+	servos[4].init_pos = 255;
+	servos[5].servo = SERV6;
+	servos[5].init_pos = 255;
+	servos[6].servo = SERV8;
+	servos[6].init_pos = 255;
+	servos[7].servo = SERV9;
+	servos[7].init_pos = 255;
+	servos[8].servo = SERV10;
+	servos[8].init_pos = 255;
+	servos[9].servo = SERV12;
+	servos[9].init_pos = 255;
+	servos[10].servo = SERV13;
+	servos[10].init_pos = 255;
+	servos[11].servo = SERV14;
+	servos[11].init_pos = 255;
 
 	/* Attach Servos */
 	servoController_init(servos, USED_SERVO);
@@ -142,14 +160,12 @@ int main(void) {
 	servoController_initialPosition();
 	delay(2000);
 
-	/* Usar Servo */
-	//servoController_moveServo(SERV15, 180);
 	/* Usar Output */
 	digitalWrite(LED3, 1);
 
 	delay(1000);
 	uartWriteString(UART_USB, "inicio..");
-	int16_t dato = 90, angle, angle_leg = 90, angle_mid = 90, angle_sho = 90;
+	uint8_t angle=0, angle_mid = 0, dato;
 
 	/* -------------  INICIAR SCHEDULER  ------------- */
 
@@ -158,63 +174,28 @@ int main(void) {
 		dato = HC06_ReadByte();
 		if (dato) {
 			switch (dato) {
-
-			case 'q':
-				angle_leg++;
-				if (angle_leg > 180)
-					angle_leg = 180;
-				angle = angle_leg;
-				servoController_moveServo(SERV4, (uint8_t)angle_leg);
-				uartWriteString(UART_USB, "leg angle change:");
-				HC06_WriteString("leg angle change:");
-				break;
-
-			case 'w':
-				angle_leg--;
-				if (angle_leg < 0)
-					angle_leg = 0;
-				angle = angle_leg;
-				servoController_moveServo(SERV4, (uint8_t)angle_leg);
-				uartWriteString(UART_USB, "leg angle change:");
-				HC06_WriteString("leg angle change:");
-				break;
-
-			case 'r':
-				angle_mid++;
-				if (angle_mid > 180)
-					angle_mid = 180;
-				angle = angle_mid;
-				servoController_moveServo(SERV5, (uint8_t)angle_mid);
-				uartWriteString(UART_USB, "mid angle change:");
-				HC06_WriteString("mid angle change:");
-				break;
-
-			case 't':
-				angle_mid--;
-				if (angle_mid < 0)
-					angle_mid = 0;
-				angle = angle_mid;
-				servoController_moveServo(SERV5, (uint8_t)angle_mid);
-				uartWriteString(UART_USB, "mid angle change:");
-				HC06_WriteString("mid angle change:");
-				break;
-
 			case 'u':
-				angle_sho++;
-				if (angle_sho > 180)
-					angle_sho = 180;
-				angle = angle_sho;
-				servoController_moveServo(SERV6, (uint8_t)angle_sho);
+				angle_mid+=5;
+				if (angle_mid > 100)
+					angle_mid = 100;
+				angle = angle_mid;
+				servoController_moveServo(SERV1, (uint8_t)angle_mid);
+				servoController_moveServo(SERV5, (uint8_t)angle_mid);
+				servoController_moveServo(SERV9, (uint8_t)angle_mid);
+				servoController_moveServo(SERV13, (uint8_t)angle_mid);
 				uartWriteString(UART_USB, "sho angle change:");
 				HC06_WriteString("sho angle change:");
 				break;
 
 			case 'i':
-				angle_sho--;
-				if (angle_sho < 0)
-					angle_sho = 0;
-				angle = angle_sho;
-				servoController_moveServo(SERV6, (uint8_t)angle_sho);
+				angle_mid-=5;
+				if (angle_mid < 0)
+					angle_mid = 0;
+				angle = angle_mid;
+				servoController_moveServo(SERV1, (uint8_t)angle_mid);
+				servoController_moveServo(SERV5, (uint8_t)angle_mid);
+				servoController_moveServo(SERV9, (uint8_t)angle_mid);
+				servoController_moveServo(SERV13, (uint8_t)angle_mid);
 				uartWriteString(UART_USB, "sho angle change:");
 				HC06_WriteString("sho angle change:");
 				break;

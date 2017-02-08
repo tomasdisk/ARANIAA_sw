@@ -43,11 +43,11 @@
 
 #include "servoController.h"        /* <= servoController header */
 
-#include "hc06_driver.h"		/* <= hc06 bluetooth driver */
+#include "hc06_driver.h"  
 
 /*==================[macros and definitions]=================================*/
 
-#define USED_SERVO 3
+#define USED_SERVO 12
 
 /*==================[internal data declaration]==============================*/
 
@@ -56,8 +56,10 @@
 /*==================[internal data definition]===============================*/
 
 servo_t servos[USED_SERVO];
+int16_t angle[USED_SERVO]= {90,90,90,90,90,90,90,90,90,90,90,90};
+uint8_t num;
 
-/*==================[external data definition]===============================*/
+/*=================	=[external data definition]===============================*/
 
 /*==================[internal functions definition]==========================*/
 
@@ -105,6 +107,10 @@ int main(void) {
 	/* Inicializar el conteo de Ticks con resolución de 1ms, sin tickHook */
 	tickConfig(1, 0);
 
+
+	//Iniciar HC06 a 115200 bps
+	HC06_init(115200);
+
 	/*Iniciar terminal*/
 	uartConfig(UART_USB, 115200);
 	/* Inicializar DigitalIO */
@@ -124,16 +130,32 @@ int main(void) {
 	digitalConfig(LED2, OUTPUT);
 	digitalConfig(LED3, OUTPUT);
 
-	/* iniciar hc06 bluetooth */
-	HC06_init(115200);
-
 	/* Definir 12 Servos */
-	servos[0].servo = SERV4;
+	servos[0].servo = SERV0;
 	servos[0].init_pos = 90;
-	servos[1].servo = SERV5;
+	servos[1].servo = SERV1;
 	servos[1].init_pos = 90;
-	servos[2].servo = SERV6;
+	servos[2].servo = SERV2;
 	servos[2].init_pos = 90;
+	servos[3].servo = SERV4;
+	servos[3].init_pos = 90;
+	servos[4].servo = SERV5;
+	servos[4].init_pos = 90;
+	servos[5].servo = SERV6;
+	servos[5].init_pos = 90;
+	servos[6].servo = SERV8;
+	servos[6].init_pos = 90;
+	servos[7].servo = SERV9;
+	servos[7].init_pos = 90;
+	servos[8].servo = SERV10;
+	servos[8].init_pos = 90;
+	servos[9].servo = SERV12;
+	servos[9].init_pos = 90;
+	servos[10].servo = SERV13;
+	servos[10].init_pos = 90;
+	servos[11].servo = SERV14;
+	servos[11].init_pos = 90;
+	
 
 	/* Attach Servos */
 	servoController_init(servos, USED_SERVO);
@@ -145,11 +167,12 @@ int main(void) {
 	/* Usar Servo */
 	//servoController_moveServo(SERV15, 180);
 	/* Usar Output */
-	digitalWrite(LED3, 1);
+	digitalWrite(LED2, 1);
 
 	delay(1000);
 	uartWriteString(UART_USB, "inicio..");
-	int16_t dato = 90, angle, angle_leg = 90, angle_mid = 90, angle_sho = 90;
+	uint8_t dato = 90;
+
 
 	/* -------------  INICIAR SCHEDULER  ------------- */
 
@@ -157,80 +180,122 @@ int main(void) {
 
 		dato = HC06_ReadByte();
 		if (dato) {
-			switch (dato) {
 
+			switch(dato){
+			case 'a' :
+				 num = SERV0;
+			 	 angle[SERV0]++;
+				 break;
+			case 'b' :
+				num = SERV0;
+				angle[SERV0]--;
+				break;
+			case 'c':
+				num = SERV1;
+				angle[SERV1]++;
+				break;
+			case 'd':
+				num = SERV1;
+				angle[SERV1]--;
+				break;
+			case 'e' :
+				num = SERV2;
+				angle[SERV2]++;
+				break;
+			case 'f':
+				num = 2;
+				angle[SERV2]--;
+				break;
+			case 'g' :
+				num = SERV4;
+				angle[SERV4]++;
+				break;
+			case 'h' :
+				num = SERV4;
+				angle[SERV4]--;
+				break;
+			case 'i' :
+				num = SERV5;
+				angle[SERV5]++;
+				break;
+			case 'j' :
+				num = SERV5;
+				angle[SERV5]--;
+				break;
+			case 'k' :
+				num = SERV6;
+				angle[SERV6]++;
+				break;
+			case 'l':
+				num = SERV6;
+				angle[SERV6]--;
+				break;
+			case 'm' :
+				num = SERV8;
+				angle[SERV8]++;
+				break;
+			case 'n':
+				num = SERV8;
+				angle[SERV8]--;
+				break;
+			case 'o':
+				num = SERV9;
+				angle[SERV9]++;
+				break;
+			case 'p':
+				num = SERV9;
+				angle[SERV9]--;
+				break;
 			case 'q':
-				angle_leg++;
-				if (angle_leg > 180)
-					angle_leg = 180;
-				angle = angle_leg;
-				servoController_moveServo(SERV4, (uint8_t)angle_leg);
-				uartWriteString(UART_USB, "leg angle change:");
-				HC06_WriteString("leg angle change:");
+				num = SERV10;
+				angle[SERV10]++;
 				break;
-
-			case 'w':
-				angle_leg--;
-				if (angle_leg < 0)
-					angle_leg = 0;
-				angle = angle_leg;
-				servoController_moveServo(SERV4, (uint8_t)angle_leg);
-				uartWriteString(UART_USB, "leg angle change:");
-				HC06_WriteString("leg angle change:");
-				break;
-
 			case 'r':
-				angle_mid++;
-				if (angle_mid > 180)
-					angle_mid = 180;
-				angle = angle_mid;
-				servoController_moveServo(SERV5, (uint8_t)angle_mid);
-				uartWriteString(UART_USB, "mid angle change:");
-				HC06_WriteString("mid angle change:");
+				num = SERV10;
+				angle[SERV10]--;
 				break;
-
-			case 't':
-				angle_mid--;
-				if (angle_mid < 0)
-					angle_mid = 0;
-				angle = angle_mid;
-				servoController_moveServo(SERV5, (uint8_t)angle_mid);
-				uartWriteString(UART_USB, "mid angle change:");
-				HC06_WriteString("mid angle change:");
+			case 's' :
+				num = SERV12;
+				angle[SERV12]++;
 				break;
-
-			case 'u':
-				angle_sho++;
-				if (angle_sho > 180)
-					angle_sho = 180;
-				angle = angle_sho;
-				servoController_moveServo(SERV6, (uint8_t)angle_sho);
-				uartWriteString(UART_USB, "sho angle change:");
-				HC06_WriteString("sho angle change:");
+			case 't' :
+				num = SERV12;
+				angle[SERV12]--;
 				break;
-
-			case 'i':
-				angle_sho--;
-				if (angle_sho < 0)
-					angle_sho = 0;
-				angle = angle_sho;
-				servoController_moveServo(SERV6, (uint8_t)angle_sho);
-				uartWriteString(UART_USB, "sho angle change:");
-				HC06_WriteString("sho angle change:");
+			case 'u' :
+				num = SERV13;
+				angle[SERV13]++;
 				break;
-
-			default:
-				dato = 0;
+			case 'v' :
+				num = SERV13;
+				angle[SERV13]--;
 				break;
+			case 'w' :
+				num = SERV14;
+				angle[SERV14]++;
+				break;
+			case 'x' :
+				num = 14;
+				angle[SERV14]--;
+				break;
+			
 			}
+			if(angle[num]>180)
+				angle[num]=180;
+			else
+				if(angle[num]<0)
+					angle[num]=0;
 
-			itoa(angle, uartBuff, 10); /* base 10 significa decimal */
+
+			itoa(angle[num], uartBuff, 10); /* base 10 significa decimal */
 			uartWriteString(UART_USB, uartBuff);
-			HC06_WriteString(uartBuff);
 			uartWriteString(UART_USB, "\r\n");
+			HC06_WriteString(uartBuff);
 			HC06_WriteString("\r\n");
-			delay(200);
+			servoController_moveServo(num,angle[num]);
+			delay(20);
 		}
+
 	}
 
 	/* ------------- FINALIZO  SCHEDULER ------------- */

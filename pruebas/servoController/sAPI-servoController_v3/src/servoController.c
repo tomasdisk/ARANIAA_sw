@@ -80,13 +80,15 @@ typedef struct {
 	uint8_t angle; /*Servo angle. From 0º to 180º*/
 	//controllerFunctionPointer_t associatedFunction; /*Function who control it*/
 	bool_t refresh;
+	uint16_t startPos;
+	uint16_t endPos;
+	bool_t reverse;
 	uint8_t init_pos; /*Natural position angle*/
 } attachedServo_t;
 
 /*==================[internal functions declaration]=========================*/
 
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
-		int32_t out_max);
+int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max);
 void controller_PCA9685_0(uint8_t n_servo);
 
 /*==================[internal data definition]===============================*/
@@ -94,38 +96,42 @@ void controller_PCA9685_0(uint8_t n_servo);
 static uint8_t use_PCA9685_0=0;
 
 static attachedServo_t AttachedServoList[SERVO_TOTAL_NUMBER] = {
-/*	position	| servo address	| attached	| angle	 |	refresh	| initial position*/
-		/*0*/	{ SERV0_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*1*/	{ SERV1_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*2*/	{ SERV2_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*3*/	{ SERV3_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*4*/	{ SERV4_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*5*/	{ SERV5_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*6*/	{ SERV6_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*7*/	{ SERV7_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*8*/	{ SERV8_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*9*/	{ SERV9_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*10*/	{ SERV10_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*11*/	{ SERV11_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*12*/	{ SERV12_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*13*/	{ SERV13_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*14*/	{ SERV14_ADDR	, 0 		, 0 	 , 0 	    , 0 },
-		/*15*/	{ SERV15_ADDR	, 0 		, 0 	 , 0 	    , 0 },
+/*  position  | servo address | attached | angle | refresh | startPos | endPos | reverse | initial position */
+  /*0 - L1 */ { SERV0_ADDR    , 0        , 0     , 0       , 157      , 460    , 0       , 50             },
+  /*1 - M1 */ { SERV1_ADDR    , 0        , 0     , 0       , 203      , 460    , 1       , 100              },
+  /*2 - S1 */ { SERV2_ADDR    , 0        , 0     , 0       , 130      , 395    , 0       , 50             },
+  /*3 - -- */ { SERV3_ADDR    , 0        , 0     , 0       , 0        , 0      , 0       , 0              },
+  /*4 - L2 */ { SERV4_ADDR    , 0        , 0     , 0       , 185      , 460    , 1       , 50             },
+  /*5 - M2 */ { SERV5_ADDR    , 0        , 0     , 0       , 210      , 460    , 0       , 100              },
+  /*6 - S2 */ { SERV6_ADDR    , 0        , 0     , 0       , 194      , 460    , 1       , 50             },
+  /*7 - -- */ { SERV7_ADDR    , 0        , 0     , 0       , 0        , 0      , 0       , 0              },
+  /*8 - L3 */ { SERV8_ADDR    , 0        , 0     , 0       , 188      , 460    , 0       , 50             },
+  /*9 - M3 */ { SERV9_ADDR    , 0        , 0     , 0       , 188      , 450    , 1       , 100              },
+  /*10- S3 */ { SERV10_ADDR   , 0        , 0     , 0       , 185      , 450    , 1       , 50             },
+  /*11- -- */ { SERV11_ADDR   , 0        , 0     , 0       , 0        , 0      , 0       , 0              },
+  /*12- L4 */ { SERV12_ADDR   , 0        , 0     , 0       , 163      , 460    , 1       , 50             },
+  /*13- M4 */ { SERV13_ADDR   , 0        , 0     , 0       , 214      , 460    , 0       , 100              },
+  /*14- S4 */ { SERV14_ADDR   , 0        , 0     , 0       , 230      , 460    , 0       , 50             },
+  /*15- -- */ { SERV15_ADDR   , 0        , 0     , 0       , 0        , 0      , 0       , 0              },
 };
 
 /*==================[external data definition]===============================*/
 
 /*==================[internal functions definition]==========================*/
 
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
-		int32_t out_max) {
+int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,	int32_t out_max) {
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 void controller_PCA9685_0(uint8_t n_servo) {
 	int16_t duty;
-	duty = (int16_t) map((int32_t) AttachedServoList[n_servo].angle, 0, 180,
-			(int32_t) PCA9685_0_POS0, (int32_t) PCA9685_0_POS180);
+	if (!AttachedServoList[n_servo].reverse) {
+		duty = (int16_t) map((int32_t) AttachedServoList[n_servo].angle, 0, 100, (int32_t) AttachedServoList[n_servo].startPos, (int32_t) AttachedServoList[n_servo].endPos);
+	}else{
+		duty = (int16_t) map((int32_t) AttachedServoList[n_servo].angle, 0, 100, (int32_t) AttachedServoList[n_servo].endPos, (int32_t) AttachedServoList[n_servo].startPos);
+	}
+	if(duty < AttachedServoList[n_servo].startPos) duty = AttachedServoList[n_servo].startPos;
+	if(duty > AttachedServoList[n_servo].endPos) duty = AttachedServoList[n_servo].endPos;
 	PCA9685_setPWM(AttachedServoList[n_servo].addr, 0, duty);
 }
 
@@ -136,10 +142,12 @@ void servoController_init(servo_t* servos, uint8_t num) {
 
 	/* attach servos and define their initial position */
 	for(i=0; i<num;i++){
-		if(servos[i].init_pos<0) servos[i].init_pos = 0;
-		if(servos[i].init_pos>180) servos[i].init_pos = 180;
 		AttachedServoList[servos[i].servo].attached=1;
-		AttachedServoList[servos[i].servo].init_pos=servos[i].init_pos;
+		if (servos[i].init_pos!=255) {
+			if(servos[i].init_pos<0) servos[i].init_pos = 0;
+			if(servos[i].init_pos>180) servos[i].init_pos = 180;
+			AttachedServoList[servos[i].servo].init_pos=servos[i].init_pos;
+		}
 		if(servos[i].servo <= SERV15){
 			use_PCA9685_0=1;
 		}
