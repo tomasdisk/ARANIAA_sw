@@ -1,104 +1,39 @@
-/* Copyright 2016, Eric Pernia.
- * All rights reserved.
+/* Copyright 2017, ARANIAA_Team.
  *
- * This file is part sAPI library for microcontrollers.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- */
-
-/*
- * Date: 2016-07-03
  */
 
 /*==================[inclusions]=============================================*/
 
 #include "main.h"         /* <= own header */
 
-#include "servoController.h"        /* <= servoController header */
-#include "sAPI.h"         /* <= sAPI header */
-#include "secuencer.h"
+#include "servoController.h"		/* <= servoController header */
+#include "sAPI.h"					/* <= sAPI header */
+#include "hc06_driver.h"
+#include "secuencer.h"				/* <= secuencer header */
 
 /*==================[macros and definitions]=================================*/
 
 #define USED_SERVO 12
 
 /*==================[internal data declaration]==============================*/
-uint8_t count = 0;
-bool_t end = 0;
 
 /*==================[internal functions declaration]=========================*/
-char* itoa(int value, char* result, int base);
 void initIO();
-void printS(uint8_t n_servo);
-void printS_c(uint8_t n_servo);
-void printS_for();
-void moveServos();
-
 void initServos();
+void decodeOrder(uint8_t order);
+void nextSecuence();
 
 /*==================[internal data definition]===============================*/
 
 servo_t servos[USED_SERVO];
-bool_t FLAG1 = 0;
-uint16_t auxR = 0;
+bool_t refresh_end = 0;
+bool_t flag_sleep = 1;
+bool_t flag_move = 0;
+bool_t flag_vervose = 0;
+
 /*==================[external data definition]===============================*/
 
 /*==================[internal functions definition]==========================*/
-
-char* itoa(int value, char* result, int base) {
-	// check that the base if valid
-	if (base < 2 || base > 36) {
-		*result = '\0';
-		return result;
-	}
-
-	char* ptr = result, *ptr1 = result, tmp_char;
-	int tmp_value;
-
-	do {
-		tmp_value = value;
-		value /= base;
-		*ptr++ =
-				"zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"[35
-						+ (tmp_value - value * base)];
-	} while (value);
-
-	// Apply negative sign
-	if (tmp_value < 0)
-		*ptr++ = '-';
-	*ptr-- = '\0';
-	while (ptr1 < ptr) {
-		tmp_char = *ptr;
-		*ptr-- = *ptr1;
-		*ptr1++ = tmp_char;
-	}
-	return result;
-}
 
 void initIO() {
 
@@ -119,56 +54,6 @@ void initIO() {
 	digitalConfig(LED2, OUTPUT);
 	digitalConfig(LED3, OUTPUT);
 
-}
-/* FUNCION que se ejecuta cada vezque ocurre un Tick. */
-bool_t myTickHook(void *ptr) {
-	FLAG1 = 1;
-	count++;
-	return 1;
-}
-
-void TASK1() {
-	if (count == 50)
-		uartWriteString(UART_USB, "Paso un segundo");
-	end = servoController_refreshAll();
-}
-
-void printS(uint8_t n_servo) {
-	static uint8_t uartBuff[10];
-
-	itoa(servos[n_servo].servo, uartBuff, 10);
-	uartWriteString(UART_USB, "Servo ");
-	uartWriteString(UART_USB, uartBuff);
-	uartWriteString(UART_USB, " pos: ");
-	itoa(servoController_getServoPos(servos[n_servo].servo), uartBuff, 10);
-	uartWriteString(UART_USB, uartBuff);
-	uartWriteString(UART_USB, "\r\n");
-
-}
-
-void printS_c(uint8_t n_servo) {
-
-	static uint8_t uartBuff[10];
-
-	itoa(servos[n_servo].servo, uartBuff, 10);
-	uartWriteString(UART_USB, "Servo  ");
-	uartWriteString(UART_USB, uartBuff);
-	uartWriteString(UART_USB, "\r\n");
-	uartWriteString(UART_USB, "pos: ");
-	itoa(servoController_getServoPos(servos[n_servo].servo), uartBuff, 10);
-	uartWriteString(UART_USB, uartBuff);
-	uartWriteString(UART_USB, "\r\n");
-	itoa(servoController_getServoDuty(servos[n_servo].servo), uartBuff, 10);
-	uartWriteString(UART_USB, "duty: ");
-	uartWriteString(UART_USB, uartBuff);
-	uartWriteString(UART_USB, "\r\n");
-
-}
-void printS_for() {
-	uint8_t i;
-	for (i = 0; i < USED_SERVO; i++) {
-		printS_c(i);
-	}
 }
 
 void initServos() {
@@ -246,68 +131,78 @@ void initServos() {
 
 }
 
-void doServo(uint8_t servoMover, uint8_t mov, bool_t dir) {
-	int16_t angle;
+void decodeOrder(uint8_t order) {
 
-	angle = servoController_getServoPos(servoMover);
-	if (dir)
-		angle += mov;
-	else
-		angle -= mov;
-	if (angle > 100) //Como los angulos son int8_t el valor maximo es 127 y no puede ajustarse dentro de servoController
-		angle = 100; //No es necesario hacer la comprobacion angle < 0, se resuelve dentro de servoController
+	switch (order) {
+	case 'a':
+		if (!flag_sleep && !flag_move) {
+			secuencer_setSeciencia(SEC_ABAJO);
+			flag_sleep = 1;
+			flag_move = 1;
+		}
+		break;
+	case 'b':
+		if (flag_sleep && !flag_move) {
+			secuencer_setSeciencia(SEC_ARRIBA);
+			flag_sleep = 0;
+			flag_move = 1;
+		}
+		break;
+	case 'c':
+		if (!flag_sleep && !flag_move) {
+			secuencer_setSeciencia(SEC_ADELANTE);
+			flag_move = 1;
+		}
+		break;
+	case 'd':
+		if (!flag_sleep && !flag_move) {
+			secuencer_setSeciencia(SEC_ATRAS);
+			flag_move = 1;
+		}
+		break;
+	case 'e':
+		if (!flag_sleep && !flag_move) {
+			secuencer_setSeciencia(SEC_GIRAR_DER);
+			flag_move = 1;
+		}
+		break;
+	case 'f':
+		if (!flag_sleep && !flag_move) {
+			secuencer_setSeciencia(SEC_GIRAR_IZQ);
+			flag_move = 1;
+		}
+		break;
+	case 'v':
+		flag_vervose = !flag_vervose;
+		break;
+	default:;
+		//TODO completar ordenes
 
-	//angle = sec.mov; //sin posicion relativa
-
-	/////
-
-	servoController_setServo(servoMover, (int8_t) angle, 2);
+	}
 }
 
-void moveServos() {
-	static uint8_t uartBuff[10];
-	int8_t servoMover;
-
+void nextSecuence() {
 	uint8_t i;
-
+	int16_t angle;
 	TypeSecuencia sec = secuencer_getSecuencia();
 
-	for (i = 0; i < 4; i++) {
-		uint8_t servos = (sec.servos >> i * 4) & 0x000F;
-		switch (servos) {
-		case 2:
-			doServo(SERVO0 + 4 * i, sec.mov, sec.dir);
-			break;
-		case 3:
-			doServo(SERVO1 + 4 * i, sec.mov, sec.dir);
-			break;
-		case 4:
-			doServo(SERVO2 + 4 * i, sec.mov, sec.dir);
-			break;
-		case 5:
-			doServo(SERVO0 + 4 * i, sec.mov, sec.dir);
-			doServo(SERVO1 + 4 * i, sec.mov, sec.dir);
-			break;
-		case 6:
-			doServo(SERVO0 + 4 * i, sec.mov, sec.dir);
-			doServo(SERVO2 + 4 * i, sec.mov, sec.dir);
-			break;
-		case 7:
-			doServo(SERVO1 + 4 * i, sec.mov, sec.dir);
-			doServo(SERVO2 + 4 * i, sec.mov, sec.dir);
-			break;
-		case 8:
-			doServo(SERVO0 + 4 * i, sec.mov, sec.dir);
-			doServo(SERVO1 + 4 * i, sec.mov, sec.dir);
-			doServo(SERVO2 + 4 * i, sec.mov, sec.dir);
-			break;
-		}
-		itoa(servoMover, uartBuff, 10);
-		uartWriteString(UART_USB, "La secuencia es ");
-		uartWriteString(UART_USB, uartBuff);
-		uartWriteString(UART_USB, "\r\n");
-		//////
+	if (sec.servos == 0xFFFF) {
+		flag_move = !flag_move;
+	} else if (flag_move) {
+		for (i = 0; i < 16; i++) {
+			if ((i + 1) % 4 != 0 && (sec.servos >> i) % 2 == 1) {
+				angle = servoController_getServoPos(i);
+				if ((sec.dir >> i) % 2)
+					angle += sec.mov;
+				else
+					angle -= sec.mov;
+				//TODO verificar cotas que siguen
+				if (angle > 100) //Como los angulos son int8_t el valor maximo es 127 y no puede ajustarse dentro de servoController
+					angle = 100; //No es necesario hacer la comprobacion angle < 0, se resuelve dentro de servoController
 
+				servoController_setServo(i, (int8_t) angle, 2);
+			}
+		}
 	}
 }
 
@@ -315,52 +210,40 @@ void moveServos() {
 
 /* FUNCION PRINCIPAL, PUNTO DE ENTRADA AL PROGRAMA LUEGO DE RESET. */
 int main(void) {
-	uint8_t i;
-	static uint8_t uartBuff[10];
-
 	/* ------------- INICIALIZACIONES ------------- */
 
 	/* Inicializar la placa */
 	boardConfig();
+	/* Inicializar IO */
 	initIO();
-
-	tickConfig(1, 0);
-	//tickConfig(40, myTickHook );
-	//delay(3000);
-	//digitalWrite( LEDB, ON );
 	/*Iniciar terminal*/
 	uartConfig(UART_USB, 115200);
+	/* Inicializar bluetooth */
+	HC06_init(115200); //TODO
+	/*Iniciar servos*/
 	initServos();
-	//delay(2000);
+
 	digitalWrite(LEDB, ON);
 	digitalWrite(LED3, 1);
 	delay(1000);
-	uartWriteString(UART_USB, "inicio..");
-	uartWriteString(UART_USB, "\r\n");
-	printS_for();
 
-	//for(i=0; i<USED_SERVO;i++){
-	//	servoController_setServo(servos[i].servo,128,2);
-	//		}
-	moveServos();
+	/* ----------- FIN INICIALIZACIONES ----------- */
 
 	while (1) {
+		/* ------- Nueva orden ------- */
+		decodeOrder(HC06_ReadByte());
 
-		delay(5);
+		/* ------- */
+		/* ------- Ejecutar ordenes ------- */
 
-		if (!servoController_ifEnd()) {
-			end = servoController_refreshAll();
-
-			printS(SERV0);
-
-			if (end) {
-				uartWriteString(UART_USB, "Termino");
-				uartWriteString(UART_USB, "\r\n");
-				printS_for();
-				delay(1000);
-				moveServos();
-			}
+		/* ------- */
+		/* ------- Ejecutar tareas ------- */
+		if (refresh_end) {
+			nextSecuence();
 		}
+		refresh_end = servoController_refreshAll();
+
+		/* ------- */
 
 	}
 	/* ------------- FINALIZO  SCHEDULER ------------- */
